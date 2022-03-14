@@ -1,0 +1,254 @@
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+using namespace std;
+
+struct student_info {
+	char name[10];
+	int scores[6];
+	student_info* next;
+};
+
+student_info* l;
+student_info* f = (student_info*)malloc(sizeof(student_info));
+
+void del_space(char* str) {
+	for (int i = 0; str[i] != 0; i++)
+		if (str[i] == ' ')
+			str[i] = '_';
+		else if (str[i] == '\n')
+			str[i] = 0;
+}
+
+void read_file() {
+	FILE* fp = fopen("scores.txt", "r");
+	if (fp == NULL || feof(fp)) {
+		FILE* fp1 = fopen("scores.txt", "w");
+		fclose(fp1);
+		l = f;
+		f->next = NULL;
+		printf("%p %p\n", f, l);
+		return;
+	}
+	char name[10];
+	int scores[6];
+	l = f;
+	while (!feof(fp)) {
+		fscanf(fp, "%s", name);
+		if (feof(fp))
+			break;
+		student_info* temp = (student_info*)malloc(sizeof(student_info));
+		l->next = temp;
+		l = temp;
+		strcpy(l->name, name);
+		for (int i = 0; i < 6; i++) {
+			fscanf(fp, "%d", &scores[i]);
+			l->scores[i] = scores[i];
+		}
+	}
+	l->next = NULL;
+	return;
+}
+
+void add() {
+	student_info* temp=(student_info*)malloc(sizeof(student_info));
+	l->next = temp;
+	l = temp;
+	free(temp);
+	printf("(추가 모드)\n");
+	printf("추가할 학생의 이름 입력(공백 포함 5글자 미만) : ");
+	fgets(l->name, 10, stdin);
+	del_space(l->name);
+	rewind(stdin);
+	printf("국어 성적 입력 : ");
+	scanf("%d", &l->scores[0]);
+	rewind(stdin);
+	printf("수학 성적 입력 : ");
+	scanf("%d", &l->scores[1]);
+	rewind(stdin);
+	printf("영어 성적 입력 : ");
+	scanf("%d", &l->scores[2]);
+	rewind(stdin);
+	printf("한국사 성적 입력 : ");
+	scanf("%d", &l->scores[3]);
+	rewind(stdin);
+	printf("사회 성적 입력 : ");
+	scanf("%d", &l->scores[4]);
+	rewind(stdin);
+	printf("과학 성적 입력 : ");
+	scanf("%d", &l->scores[5]);
+	rewind(stdin);
+	l->next = NULL;
+	printf("성공적으로 추가했습니다!\n");
+	return;
+}
+
+void printall() {
+	if (f->next == NULL) {
+		printf("아직 학생 성적이 입력되지 않았습니다!\n");
+		return;
+	}
+	student_info* c = f->next;
+	printf("(출력 모드)\n");
+	printf("이름       | 국어 | 수학 | 영어 | 한국사 | 사회 | 과학 \n");
+	while (1) {
+		printf("%-10s | %-4d | %-4d | %-4d | %-6d | %-4d | %-4d \n", c->name, c->scores[0], c->scores[1], c->scores[2], c->scores[3], c->scores[4], c->scores[5]);
+		if (c->next == NULL)
+			return;
+		c = c->next;
+	}
+	return;
+}
+
+void search() {
+	student_info* c = f->next;
+	if (c == NULL) {
+		printf("아직 학생 성적이 입력되지 않았습니다!\n");
+		return;
+	}
+	printf("(찾기 모드)\n");
+	char sname[10];
+	int f = 0;
+	printf("찾고싶은 학생의 이름을 입력하세요 : ");
+	fgets(sname, 10, stdin);
+	del_space(sname);
+	int count = 0;
+	while (c != NULL) {
+		if (!strncmp(c->name, sname, strlen(sname))) {
+			if (count == 0) {
+				printf("이름       | 국어 | 수학 | 영어 | 한국사 | 사회 | 과학 \n");
+				count = 1;
+			}
+			printf("%-10s | %-4d | %-4d | %-4d | %-6d | %-4d | %-4d \n", c->name, c->scores[0], c->scores[1], c->scores[2], c->scores[3], c->scores[4], c->scores[5]);
+			f = 1;
+		}
+		c = c->next;
+	}
+	if (f == 0)
+		printf("입력하신 이름과 일치하는 학생이 없습니다\n");
+	return;
+}
+
+void update() {
+	student_info* c = f->next;
+	if (c == NULL) {
+		printf("아직 학생 성적이 입력되지 않았습니다!\n");
+		return;
+	}
+	printf("(갱신 모드)\n");
+	char sname[10];
+	int f = 0;
+	printf("성적을 갱신하고 싶은 학생의 이름을 입력하세요 : ");
+	fgets(sname, 10, stdin);
+	del_space(sname);
+	while (c != NULL) {
+		if (!strncmp(c->name, sname, strlen(sname))) {
+			f = 1;
+			printf("입력하신 이름과 일치하는 학생을 찾았습니다\n");
+			printf("새로운 성적을 입력해주세요\n");
+			printf("국어 성적 입력 : ");
+			scanf("%d", &c->scores[0]);
+			rewind(stdin);
+			printf("수학 성적 입력 : ");
+			scanf("%d", &c->scores[1]);
+			rewind(stdin);
+			printf("영어 성적 입력 : ");
+			scanf("%d", &c->scores[2]);
+			rewind(stdin);
+			printf("한국사 성적 입력 : ");
+			scanf("%d", &c->scores[3]);
+			rewind(stdin);
+			printf("사회 성적 입력 : ");
+			scanf("%d", &c->scores[4]);
+			rewind(stdin);
+			printf("과학 성적 입력 : ");
+			scanf("%d", &c->scores[5]);
+			rewind(stdin);
+		}
+		c = c->next;
+	}
+	if (f == 0)
+		printf("입력하신 이름과 일치하는 학생이 없습니다\n");
+	return;
+}
+
+void save() {
+	student_info* c = f->next;
+	FILE* fp = fopen("scores.txt", "w");
+	if (c == NULL)
+		return;
+	while (1) {
+		fprintf(fp, "%s ", c->name);
+		for (int i = 0; i < 6; i++)
+			fprintf(fp, "%d ", c->scores[i]);
+		fprintf(fp, "\n");
+		if (c->next == NULL)
+			break;
+		c = c->next;
+	}
+	fclose(fp);
+	return;
+}
+
+void del() {
+	if (f->next == NULL) {
+		printf("아직 학생 성적이 입력되지 않았습니다!\n");
+		return;
+	}
+	student_info* c = f;
+	char sname[10];
+	int f = 0;
+	printf("삭제할 학생의 이름을 입력해주세요 : ");
+	fgets(sname, 10, stdin);
+	del_space(sname);
+	while (1) {
+		if (!strcmp(c->next->name, sname)) {
+			f = 1;
+			printf("입력하신 이름과 일치하는 학생을 찾았습니다\n");
+			printf("정말로 삭제할까요?(y/n)");
+			char g;
+D:
+			scanf("%c", &g);
+			rewind(stdin);
+			if (g == 'y' || g == 'Y')
+				c->next = c->next->next;
+			else if (g == 'n' || g == 'N')
+				printf("삭제를 취소했습니다\n");
+			else {
+				printf("n과 y중 하나를 입력해주세요\n");
+				goto D;
+			}
+		}
+		if (c->next == NULL)
+			break;
+		c = c->next;
+	}
+}
+
+int main() {
+	printf("\'man\'명령어로 사용할 수 있는 명령어들을 확인할 수 있습니다\n");
+	read_file();
+	while (1) {
+		char command[10];
+		printf(">>>");
+		fgets(command, 9, stdin);
+		rewind(stdin);
+		if (!strncmp(command, "add", 3))
+			add();
+		else if (!strncmp(command, "printall", 8))
+			printall();
+		else if (!strncmp(command, "search", 6))
+			search();
+		else if (!strncmp(command, "update", 6))
+			update();
+		else if (!strncmp(command, "save", 4))
+			save();
+		else if (!strncmp(command, "exit", 4)) {
+			save();
+			exit(0);
+		}
+		else if (!strncmp(command, "delete", 3))
+			del();
+	}
+}
