@@ -1,0 +1,268 @@
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <Windows.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <time.h>
+#include <tchar.h>
+#include <mmsystem.h>
+#pragma comment(lib,"winmm.lib")
+#define GAKS GetAsyncKeyState
+using namespace std;
+
+void gotoxy(int x, int y);
+void setColor(unsigned short text, unsigned short back);
+void CursorView();
+void print_map();
+void right();
+void left();
+void up();
+void down();
+void die();
+void move_obstruct();
+void new_obstruct(int);
+
+struct xy {
+	int y;
+	int x;
+	int way;
+};
+
+xy player_info={15, 15, 0};
+xy* stars = (xy*)malloc(0);
+int time_spent, maximum_time, life=3;
+long long int score;
+bool map[30][30];
+
+int main() {
+	system("mode con cols=100 lines=40");
+	system("cls");
+	CursorView();
+	srand(time(NULL));
+	gotoxy(20, 10);
+	printf("->(오른쪽 화살표) 키를 눌러 시작하세요.");
+	while(!GAKS(VK_RIGHT)){}
+	system("cls");
+	print_map();
+	setColor(6, 0);
+	gotoxy(70, 7);
+	setColor(12, 0);
+	printf("♥ ");
+	setColor(7, 0);
+	printf("x %d", life);
+	gotoxy(30, 15);
+	setColor(6, 0);
+	printf("\u2299");
+	PlaySound(_T("./sources/in_orbit.wav"), 0, SND_FILENAME | SND_ASYNC | SND_LOOP);
+	while (1) {
+		if (GAKS(VK_RIGHT) && player_info.x < 29)
+			right();
+		if (GAKS(VK_LEFT) && player_info.x > 0)
+			left();
+		if (GAKS(VK_UP) && player_info.y > 0)
+			up();
+		if (GAKS(VK_DOWN) && player_info.y < 29)
+			down();
+		if (GAKS(VK_ESCAPE))
+			exit(0);
+		if (map[player_info.y][player_info.x] == 1) {
+			if (life > 0) {
+				life--;
+				gotoxy(72, 7);
+				setColor(7, 0);
+				printf(" x %d", life);
+			}
+			else
+				die();
+		}
+		move_obstruct();
+		time_spent++;
+		score += maximum_time;
+		gotoxy(70, 5);
+		setColor(7, 0);
+		printf("current score : %d", score);
+		Sleep(100);
+	}
+	return 0;
+}
+
+void die() {
+	system("cls");
+	gotoxy(30, 15);
+	setColor(7, 0);
+	printf("Game Over");
+	FILE* fp = fopen("./sources/bs.dat", "r");
+	if (fp == NULL) {
+		printf("(best score!!)");
+		FILE* fp1 = fopen("./sources/bs.dat", "w");
+		fprintf(fp1, "%d", score);
+	}
+	else {
+		int bestscore;
+		fscanf(fp, "%d", &bestscore);
+		fclose(fp);
+		if (score > bestscore) {
+			printf("(best score!!)");
+			FILE* fp1 = fopen("./sources/bs.dat", "w");
+			fprintf(fp1, "%d", score);
+		}
+	}
+	gotoxy(30, 17);
+	printf("ESC를 눌러 종료할 수 있습니다...");
+	while(!GAKS(VK_ESCAPE)){}
+	exit(0);
+}
+
+void move_obstruct() {
+	if (time_spent == 30&&time_spent<40) {
+		time_spent = 0;
+		maximum_time++;
+		stars=(xy*)realloc(stars, sizeof(xy) * maximum_time);
+		new_obstruct(maximum_time - 1);
+	}
+	for (int i = 0; i < maximum_time; i++) {
+		map[stars[i].y][stars[i].x] = 0;
+		gotoxy(stars[i].x * 2, stars[i].y);
+		setColor(7, 0);
+		printf("  ");
+		if ((stars[i].x == 0&&(stars[i].way!=6&&stars[i].way!=2)) || (stars[i].y == 0&&(stars[i].way!=4&&stars[i].way!=8)) || (stars[i].x == 29 && (stars[i].way != 6 && stars[i].way != 2)) || (stars[i].y == 29 && (stars[i].way != 4 && stars[i].way != 8)))
+			new_obstruct(i);
+		if (stars[i].way == 1) {
+			stars[i].x++;
+			stars[i].y++;
+		}
+		else if (stars[i].way == 2) {
+			stars[i].y++;
+		}
+		else if (stars[i].way == 3) {
+			stars[i].x--;
+			stars[i].y++;
+		}
+		else if (stars[i].way == 4) {
+			stars[i].x--;
+		}
+		else if (stars[i].way == 5) {
+			stars[i].x--;
+			stars[i].y--;
+		}
+		else if (stars[i].way == 6) {
+			stars[i].y--;
+		}
+		else if (stars[i].way == 7) {
+			stars[i].x++;
+			stars[i].y--;
+		}
+		else if (stars[i].way == 8) {
+			stars[i].x++;
+		}
+		if (stars[i].x == player_info.x && stars[i].y == player_info.y) {
+			map[stars[i].y][stars[i].x] = 0;
+			if (life > 0) {
+				life--;
+				gotoxy(72, 7);
+				setColor(7, 0);
+				printf(" x %d", life);
+				new_obstruct(i);
+			}
+			else
+				die();
+		}
+		map[stars[i].y][stars[i].x] = 1;
+		gotoxy(stars[i].x * 2, stars[i].y);
+		printf("○");
+	}
+}
+
+void new_obstruct(int a) {
+	if (rand() % 2 == 1) {
+		stars[a].x = rand() % 30;
+		stars[a].y = 0;
+	}
+	else {
+		stars[a].x = 0;
+		stars[a].y = rand() % 30;
+	}
+	if (stars[a].x == 0 && stars[a].y == 0)
+		stars[a].way = 1;
+	else if (stars[a].x == 29 && stars[a].y == 0)
+		stars[a].way = 3;
+	else if (stars[a].x == 29 && stars[a].y == 29)
+		stars[a].way = 5;
+	else if (stars[a].x == 0 && stars[a].way == 29)
+		stars[a].way = 7;
+	else if (stars[a].x == 0)
+		stars[a].way = (7 + rand() % 3) % 9;
+	else if (stars[a].x == 29)
+		stars[maximum_time - 1].way = (3 + rand() % 3);
+	else if (stars[a].y == 0)
+		stars[a].way = (1 + rand() % 3);
+	else
+		stars[a].way = (5 + rand() % 3);
+}
+
+void right() {
+	setColor(6, 0);
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("  ");
+	player_info.x++;
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("\u2299");
+}
+
+void left() {
+	setColor(6, 0);
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("  ");
+	player_info.x--;
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("\u2299");
+}
+
+void up() {
+	setColor(6, 0);
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("  ");
+	player_info.y--;
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("\u2299");
+}
+
+void down() {
+	setColor(6, 0);
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("  ");
+	player_info.y++;
+	gotoxy(player_info.x * 2, player_info.y);
+	printf("\u2299");
+}
+
+void print_map() {
+	gotoxy(-2, -1);
+	for (int i = 0; i < 32; i++) {
+		for (int j = 0; j < 32; j++) {
+			if (i == 0 || i == 31 || j == 0 || j == 31)
+				setColor(0, 8);
+			else
+				setColor(7, 0);
+			printf("  ");
+		}
+		printf("\n");
+	}
+}
+
+void gotoxy(int x, int y) {
+	COORD pos = { x+2,y+1 };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+}
+
+void setColor(unsigned short text, unsigned short back) {
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), text | (back << 4));
+}
+
+void CursorView()
+{
+	CONSOLE_CURSOR_INFO cursorInfo = { 0, };
+	cursorInfo.dwSize = 1;
+	cursorInfo.bVisible = FALSE;
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
+}
